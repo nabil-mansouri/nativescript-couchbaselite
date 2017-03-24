@@ -1,0 +1,46 @@
+{
+  "name": "tns-couchbase-test",
+  "version": "1.0.0",
+  "description": "Test package fo tns-couchbase",
+  "nativescript": {
+    "id": "org.nativescript.tests",
+    "tns-android": {
+      "version": "2.5.0"
+    }
+  },
+  "scripts": {
+    "test-android": "tns test android --emulator --watch"
+  },
+  "dependencies": {
+    "@angular/common": "2.4.3",
+    "@angular/compiler": "2.4.3",
+    "@angular/core": "2.4.3",
+    "@angular/forms": "2.4.3",
+    "@angular/http": "2.4.3",
+    "@angular/platform-browser": "2.4.3",
+    "@angular/platform-browser-dynamic": "2.4.3",
+    "@angular/router": "3.4.3",
+    "nativescript-angular": "1.4.0",
+    "nativescript-couchbaselite": "file:///Users/nabilmansouri/Documents/workspace/OpenSource/tns-couchbase",
+    "nativescript-theme-core": "~1.0.2",
+    "nativescript-unit-test-runner": "^0.3.4",
+    "reflect-metadata": "~0.1.8",
+    "rxjs": "~5.0.1",
+    "tns-core-modules": "2.5.1"
+  },
+  "devDependencies": {
+    "@types/jasmine": "^2.5.43",
+    "babel-traverse": "6.23.1",
+    "babel-types": "6.23.0",
+    "babylon": "6.16.1",
+    "jasmine-core": "^2.4.1",
+    "karma": "^1.5.0",
+    "karma-jasmine": "^1.1.0",
+    "karma-nativescript-launcher": "^0.4.0",
+    "lazy": "1.0.11",
+    "nativescript-dev-android-snapshot": "^0.*.*",
+    "nativescript-dev-typescript": "~0.3.5",
+    "typescript": "~2.1.0",
+    "zone.js": "~0.7.2"
+  }
+}

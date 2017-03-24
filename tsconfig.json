@@ -1,0 +1,22 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "target": "es5",
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "noEmitHelpers": true,
+        "noEmitOnError": true,
+        "lib": [
+            "es2016"
+        ], 
+        "allowJs": true,
+        "skipLibCheck": true
+    },
+    "exclude": [
+        "node_modules",
+        "typings/couchbase/_helpers.d.ts",
+        "platforms",
+        "**/*.aot.ts",
+        "tests"
+    ]
+}

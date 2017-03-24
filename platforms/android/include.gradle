@@ -1,0 +1,24 @@
+repositories {
+    maven { url 'http://files.couchbase.com/maven2/' }
+    jcenter()
+}
+
+dependencies {
+    compile 'com.couchbase.lite:couchbase-lite-android:1.4.0'
+    compile 'com.couchbase.lite:couchbase-lite-android-sqlcipher:1.4.0'
+    compile 'com.google.code.gson:gson:2.8.0'
+
+}
+
+android {
+    productFlavors {
+        "tns-couchbase" {
+            dimension "tns-couchbase"
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/ASL2.0'
+        exclude 'META-INF/NOTICE'
+        exclude 'META-INF/LICENSE'
+    }
+}
