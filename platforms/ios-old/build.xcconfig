@@ -1,1 +1,0 @@
-OTHER_LDFLAGS = $(inherited) -l libsqlcipher.a -framework Pods_tests

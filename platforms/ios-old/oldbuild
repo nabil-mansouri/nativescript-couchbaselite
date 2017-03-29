@@ -1,1 +1,0 @@
-OTHER_LDFLAGS = $(inherited) -llibsqlcipher.a -framework CFNetwork -framework SystemConfiguration

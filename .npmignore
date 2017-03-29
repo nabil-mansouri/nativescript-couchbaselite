@@ -1,4 +1,5 @@
 tests/
+node_modules/
 *.ts
 !commons.ts
 !*.d.ts
