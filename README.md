@@ -12,7 +12,7 @@ A nativescript plugin that brings you all couchbase features:
 # Author
 
 * Nabil MANSOURI
-* My blog <http://nabil.e-devservice.com>
+* My blog <http://e-devservice.com>
 
 # How to use it
 
