@@ -19,9 +19,8 @@ A nativescript plugin that brings you all couchbase features:
 ## 1- Import dependency
 
 ```
+tns plugin add nativescript-couchbaselite
 
-npm install --save nativescript-couchbaselite
-	
 ```	
 
 		
