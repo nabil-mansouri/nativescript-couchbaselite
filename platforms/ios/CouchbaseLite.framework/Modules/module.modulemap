@@ -1,0 +1,12 @@
+framework module CouchbaseLite {
+  umbrella header "CouchbaseLite.h"
+
+  link "libsqlite3.dylib"
+  link "libz.dylib"
+  link framework "CFNetwork.framework"
+  link framework "Security.framework"
+  link framework "SystemConfiguration.framework"
+
+  export *
+  module * { export * }
+}

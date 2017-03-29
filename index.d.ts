@@ -1,9 +1,9 @@
-import { LiveQuery, ReplicationListener, Log, Storage, DatabaseOptions, DatabaseListener, DatabaseListenerParam, QueryListener, DocumentOpts, Revision, AttachmentImage, Attachment, Document, Emitter, ViewOpts, FilterOpts, IndexUpdateMode, ReplicationError, ReplicationStatus, Query } from "./commons";
+import { LiveQuery, ReplicationListener, Log, Storage, DatabaseOptions, DatabaseListener, DatabaseListenerParam, QueryListener, DocumentOpts, Revision, AttachmentImage, Attachment, Document, Emitter, ViewOpts, FilterOpts, IndexUpdateMode, ReplicationError, ReplicationStatus, Query, QueryResult } from "./commons";
 import { ImageSource } from "image-source"
 
 import { ClassType } from "class-transformer/ClassTransformer";
-export { LiveQuery, ReplicationListener, Log, Storage, DatabaseOptions, DatabaseListenerParam, DatabaseListener, QueryListener, DocumentOpts, Revision, AttachmentImage, Attachment, Document, Emitter, ViewOpts, FilterOpts, IndexUpdateMode, ReplicationError, ReplicationStatus, Query };
-declare module "couch"{
+export { LiveQuery, ReplicationListener, Log, Storage, DatabaseOptions, DatabaseListenerParam, DatabaseListener, QueryListener, DocumentOpts, Revision, AttachmentImage, Attachment, Document, Emitter, ViewOpts, FilterOpts, IndexUpdateMode, ReplicationError, ReplicationStatus, Query, QueryResult };
+declare module "couch" {
 
 }
 export class DatabaseManager {
@@ -28,8 +28,8 @@ export class Database {
     setAttachment(id: string, file: Attachment): void;
     removeAttachment(id: string, name: string): void;
     createView(opts: ViewOpts): void;
-    queryView(name: string, query: Query): any;
-    queryAllDocuments(query: Query): any[];
+    queryView(name: string, query: Query): QueryResult;
+    queryAllDocuments(query: Query): QueryResult;
     liveQuery(name: string, query: Query, listener: QueryListener): LiveQuery;
     addChangeListener(listener: DatabaseListener): void;
     createPullReplication(url: string): ReplicationPull;

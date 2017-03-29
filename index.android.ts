@@ -25,7 +25,7 @@ export class DatabaseManager implements def.DatabaseManager {
             if (opts.encryptionKey) {
                 let dbOpt = new com.couchbase.lite.DatabaseOptions();
                 dbOpt.setEncryptionKey(<any>opts.encryptionKey);
-                dbOpt.setCreate(true);
+                dbOpt.setCreate(opts.create);
                 db = instance.manager.openDatabase(opts.name, dbOpt);
             } else {
                 db = instance.manager.getDatabase(opts.name);
@@ -165,6 +165,7 @@ export class Database implements def.Database {
             if (opts) {
                 opts.ttl && document.setExpirationDate(this.mapper.toJavaDate(opts.ttl));
             }
+            //
             let rev = document.putProperties(this.mapper.jsonToMap(data));
             data.docId = document.getId();
             data.docRev = rev.getId();
@@ -173,13 +174,13 @@ export class Database implements def.Database {
         }
     }
     getDocument(id: string): def.Document {
-        let document = this.db.getDocument(id);
+        let document = this.db.getExistingDocument(id);
         if (document != null && document.getProperties() != null) {
             var value = this.mapper.mapToJson(document.getProperties());
             value.docId = document.getId();
             value.docRev = document.getCurrentRevisionId();
             return value;
-        }else{
+        } else {
             return null;
         }
     }
@@ -224,13 +225,13 @@ export class Database implements def.Database {
         this.db.runInTransaction(new com.couchbase.lite.TransactionalTask({
             run() {
                 try {
-                    let document = this.db.getDocument(id);
+                    let document = self.db.getDocument(id);
                     let current = document.getCurrentRevision();
                     let revs = document.getConflictingRevisions();
                     for (let i = 0; i < revs.size(); i++) {
                         let rev = revs.get(i);
                         let newRev = rev.createRevision();
-                        if (rev.getId().equals(current.getId())) {
+                        if (rev.getId() == (current.getId())) {
                             newRev.setProperties(self.mapper.jsonToMap(merged));
                         } else {
                             newRev.setIsDeletion(true);
@@ -291,10 +292,17 @@ export class Database implements def.Database {
     createView(opts: def.ViewOpts): void {
         let self = this;
         let view = this.db.getView(opts.name);
+        //let newLoader = java.lang.Thread.currentThread().getContextClassLoader();
         let mapper = new com.couchbase.lite.Mapper({
             map(document: java.util.Map<String, Object>, emitter: com.couchbase.lite.Emitter) {
-                let value = self.mapper.mapToJson(document);
-                opts.map(value, new Emitter(emitter));
+                //let oldLoader = java.lang.Thread.currentThread().getContextClassLoader();
+                try {
+                    //java.lang.Thread.currentThread().setContextClassLoader(newLoader);
+                    let value = self.mapper.mapToJson(document);
+                    opts.map(value, new Emitter(emitter));
+                } finally {
+                    //java.lang.Thread.currentThread().setContextClassLoader(oldLoader);
+                }
             }
         });
         if (opts.reduce) {
@@ -327,37 +335,18 @@ export class Database implements def.Database {
         this.isDefined(query.startKey) && queryM.setStartKey(this.mapper.toJavaSafe(query.startKey));
         this.isDefined(query.startKeyDocID) && queryM.setStartKeyDocId(query.startKeyDocID);
     }
-    private getQueryResult(query: def.Query, resEnum: com.couchbase.lite.QueryEnumerator): any[] {
-        var result: any[] = [];
-        while (resEnum.hasNext()) {
-            var row = resEnum.next();
-            if (row.getValue() != null) {
-                let doc = this.mapper.toJSSAfe(row.getValue());
-                result.push(doc);
 
-            } else if (row.getDocument() != null) {
-                let prop = row.getDocument().getProperties();
-                let doc = this.mapper.mapToJson(prop);
-                result.push(doc);
-            }
-        }
-        if (query.mapOnly || result.length > 1) {
-            return result;
-        } else {
-            return result[0];
-        }
-    }
-    queryView(name: string, query: def.Query): any {
+    queryView(name: string, query: def.Query): def.QueryResult {
         let queryM = this.db.getView(name).createQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return this.getQueryResult(query, resEnum);
+        return new QueryResult(queryM, resEnum);
     }
-    queryAllDocuments(query: def.Query): any[] {
+    queryAllDocuments(query: def.Query): def.QueryResult {
         let queryM = this.db.createAllDocumentsQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return this.getQueryResult(query, resEnum);
+        return new QueryResult(queryM, resEnum);
     }
     liveQuery(name: string, query: def.Query, listener: def.QueryListener): def.LiveQuery {
         let view = this.db.getView(name);
@@ -369,8 +358,8 @@ export class Database implements def.Database {
             changed(event: com.couchbase.lite.LiveQuery.ChangeEvent) {
                 let obj = <any>event.getSource();
                 if (obj.equals(live)) {
-                    let rows = self.getQueryResult(query, event.getRows());
-                    listener.onRows(rows);
+                    let res = new QueryResult(live, live.getRows());
+                    listener.onRows(res);
                 }
             }
         }));
@@ -386,6 +375,10 @@ export class Database implements def.Database {
             },
             stop: () => {
                 live.stop();
+            },
+            run: () => {
+                let resEnum = live.run();
+                return new QueryResult(live, resEnum);
             }
         }
     }
@@ -457,10 +450,107 @@ export class Database implements def.Database {
         return (typeof variable !== 'undefined');
     }
 }
-
-export class ReplicationPull implements def.ReplicationPull {
+export class QueryResult implements def.QueryResult {
+    ids: string[] = null;
+    documents: def.Document[] = null;
+    values: any[] = null;
     mapper = new Mapper();
-    constructor(private innerPull: com.couchbase.lite.replicator.Replication) { }
+    constructor(private query: com.couchbase.lite.Query, private resEnum: com.couchbase.lite.QueryEnumerator) { }
+    getDocuments(): def.Document[] {
+        this.resEnum.reset();
+        if (this.documents == null) {
+            this.documents = [];
+            while (this.resEnum.hasNext()) {
+                var row = this.resEnum.next();
+                if (row.getDocument() != null) {
+                    let prop = row.getDocument().getProperties();
+                    let doc = this.mapper.mapToJson(prop);
+                    this.documents.push(doc);
+                }
+            }
+        }
+        return this.documents;
+    }
+    getValues(): any[] {
+        this.resEnum.reset();
+        if (this.values == null) {
+            this.values = [];
+            while (this.resEnum.hasNext()) {
+                var row = this.resEnum.next();
+                if (row.getValue() != null) {
+                    let doc = this.mapper.toJSSAfe(row.getValue());
+                    this.values.push(doc);
+                }
+            }
+        }
+        return this.values;
+    }
+    getDocumentsId(): string[] {
+        if (this.ids == null) {
+            this.ids = [];
+            while (this.resEnum.hasNext()) {
+                var row = this.resEnum.next();
+                if (row.getDocumentId() != null) {
+                    this.ids.push(row.getDocumentId());
+                }
+            }
+        }
+        return this.ids;
+    }
+    firstDocument(): def.Document {
+        let docs = this.getDocuments();
+        return docs.length > 0 ? docs[0] : null;
+    }
+    firstValue(): any {
+        let docs = this.getValues();
+        return docs.length > 0 ? docs[0] : null;
+    }
+    firstId(): string {
+        let docs = this.getDocumentsId();
+        return docs.length > 0 ? docs[0] : null;
+    }
+    hasDocuments() {
+        let docs = this.getDocuments();
+        return docs.length > 0;
+    }
+    hasValues() {
+        let docs = this.getValues();
+        return docs.length > 0;
+    }
+    hasIds() {
+        let docs = this.getDocumentsId();
+        return docs.length > 0;
+    }
+    rerun(): void {
+        this.documents = null;
+        this.ids = null;
+        this.values = null;
+        this.resEnum = this.query.run();
+    }
+}
+abstract class Replication {
+    addChangeListener(listener: def.ReplicationListener): void {
+        this.observer().addChangeListener(new com.couchbase.lite.replicator.Replication.ChangeListener({
+            changed(ev: com.couchbase.lite.replicator.Replication.ChangeEvent) {
+                listener.onChange({
+                    changesCount: ev.getChangeCount(),
+                    completedChangesCount: ev.getCompletedChangeCount(),
+                    lastError: (ev.getError() == null) ? null : ev.getError().getMessage(),
+                    lastErrorCode: (ev.getError() == null) ? null : (<any>ev.getError()).code,
+                    status: <number>ev.getStatus()
+                })
+            }
+        }));
+    }
+    abstract observer(): com.couchbase.lite.replicator.Replication;
+}
+export class ReplicationPull extends Replication implements def.ReplicationPull {
+    mapper = new Mapper();
+    constructor(private innerPull: com.couchbase.lite.replicator.Replication) { super() }
+
+    observer(): com.couchbase.lite.replicator.Replication {
+        return this.innerPull;
+    }
     setContinuous(cont: boolean) {
         this.innerPull.setContinuous(true);
     }
@@ -477,19 +567,6 @@ export class ReplicationPull implements def.ReplicationPull {
     stop(): void {
         this.innerPull.stop();
     }
-    addChangeListener(listener: def.ReplicationListener): void {
-        this.innerPull.addChangeListener(new com.couchbase.lite.replicator.Replication.ChangeListener({
-            changed(ev: com.couchbase.lite.replicator.Replication.ChangeEvent) {
-                listener.onChange({
-                    changesCount: ev.getChangeCount(),
-                    completedChangesCount: ev.getCompletedChangeCount(),
-                    lastError: (ev.getError() == null) ? null : ev.getError().getMessage(),
-                    lastErrorCode: (ev.getError() == null) ? null : (<any>ev.getError()).code,
-                    status: <number>ev.getStatus()
-                })
-            }
-        }));
-    }
     channels(channels: string[]) {
         this.innerPull.setChannels(this.mapper.toJavaSafe(channels));
     }
@@ -498,9 +575,9 @@ export class ReplicationPull implements def.ReplicationPull {
     }
 }
 
-export class ReplicationPush implements def.ReplicationPush {
+export class ReplicationPush extends Replication implements def.ReplicationPush {
     mapper = new Mapper();
-    constructor(private innerPush: com.couchbase.lite.replicator.Replication) { }
+    constructor(private innerPush: com.couchbase.lite.replicator.Replication) { super() }
     setContinuous(cont: boolean) {
         this.innerPush.setContinuous(true);
     }
@@ -517,18 +594,8 @@ export class ReplicationPush implements def.ReplicationPush {
     stop(): void {
         this.innerPush.stop();
     }
-    addChangeListener(listener: def.ReplicationListener): void {
-        this.innerPush.addChangeListener(new com.couchbase.lite.replicator.Replication.ChangeListener({
-            changed(ev: com.couchbase.lite.replicator.Replication.ChangeEvent) {
-                listener.onChange({
-                    changesCount: ev.getChangeCount(),
-                    completedChangesCount: ev.getCompletedChangeCount(),
-                    lastError: (ev.getError() == null) ? null : ev.getError().getMessage(),
-                    lastErrorCode: (ev.getError() == null) ? null : (<any>ev.getError()).code,
-                    status: <number>ev.getStatus()
-                })
-            }
-        }));
+    observer(): com.couchbase.lite.replicator.Replication {
+        return this.innerPush;
     }
     setFilter(filter: string) {
         this.innerPush.setFilter(filter);

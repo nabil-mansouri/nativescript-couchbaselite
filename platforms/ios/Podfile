@@ -1,2 +1,0 @@
-pod 'couchbase-lite-ios', '~> 1.4'
-pod 'couchbase-lite-ios/SQLCipher', '1.4'

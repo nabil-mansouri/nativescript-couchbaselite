@@ -1,0 +1,12 @@
+{
+  "interface":":4984",
+  "log": ["HTTP", "Auth"],
+  "databases": {
+    "test": {
+      "server": "walrus:",
+      "users": {
+        "user": {"disabled": false,"password":"password", "admin_channels": [] }
+      }
+    }
+  }
+}

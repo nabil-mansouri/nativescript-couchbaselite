@@ -6,10 +6,14 @@
     "id": "org.nativescript.tests",
     "tns-android": {
       "version": "2.5.0"
+    },
+    "tns-ios": {
+      "version": "2.5.0"
     }
   },
   "scripts": {
-    "test-android": "tns test android --emulator --watch"
+    "test-android": "tns test android --emulator --watch",
+    "test-ios": "tns test ios --emulator --watch"
   },
   "dependencies": {
     "@angular/common": "2.4.3",

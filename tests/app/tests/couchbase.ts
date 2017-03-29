@@ -1,6 +1,6 @@
 import { TestAppComponent } from "./test-app";
 import {
-    LiveQuery, QueryListener, Revision,
+    QueryResult, LiveQuery, QueryListener, Revision,
     DatabaseManager, Document, Database, AttachmentFactory, Emitter, AttachmentImage
 } from 'nativescript-couchbaselite';
 import { Type } from "class-transformer";
@@ -33,6 +33,8 @@ class Orgnisation implements Document {
     docType: string = "ORGANISATION";
     name: string;
 }
+
+declare var NSStringFromClass: any;
 describe('test a TransactionService', () => {
     let testApp: TestAppComponent = null;
     let dbTest: Database = null;
@@ -53,36 +55,50 @@ describe('test a TransactionService', () => {
 
     beforeEach((done) => {
         //CREATE DB 
-        dbTest = DatabaseManager.getOrCreate({ name: dbName });
+        dbTest = DatabaseManager.getOrCreate({ name: dbName, create: true });
         dbTest.destroy();
-        dbTest = DatabaseManager.getOrCreate({ name: dbName });
+        dbTest = DatabaseManager.getOrCreate({ name: dbName, create: true });
         let mapping = new Map<string, any>();
         mapping.set("USER", User);
         dbTest.setMapping(mapping);
         expect(dbTest).not.toBeNull();
+
         done();
     });
     afterEach(() => {
         testApp.disposeComponents();
     });
     it("should create database", (done) => {
-        let db = DatabaseManager.getOrCreate({ name: "unsafe" });
+        let db = DatabaseManager.getOrCreate({ name: "unsafe", create: true });
         expect(db).not.toBeNull("DB is null");
         db.createDocument(testObject);
         //GET OPENED DB
-        db = DatabaseManager.getExisting({ name: "unsafe" });
+        db = DatabaseManager.getExisting({ name: "unsafe", create: false });
         expect(db).not.toBeNull("DB dont exists");
         db.destroy();
         db.close();
         done();
     });
+    it("should use same database", (done) => {
+        let db = DatabaseManager.getOrCreate({ name: "same", create: true });
+        expect(db).not.toBeNull("DB is null");
+        db.createDocument(testObject);
+        let all = db.queryAllDocuments({ mapOnly: true });
+        db.close();
+        //GET OPENED DB
+        db = DatabaseManager.getOrCreate({ name: "same", create: true });
+        let all2 = db.queryAllDocuments({ mapOnly: true });
+        expect(all2).toEqual(all, "Should have same number of docs")
+        db.close();
+        done();
+    });
     it("should create database encrypt", (done) => {
-        let db = DatabaseManager.getOrCreate({ name: "dbencrypt", encryptionKey: "SECURE" });
+        let db = DatabaseManager.getOrCreate({ name: "dbencrypt", encryptionKey: "SECURE", create: true });
         expect(db).not.toBeNull("DB is null");
         //GET OPENED
-        db = DatabaseManager.getExisting({ name: "dbencrypt", encryptionKey: "SECURE" });
+        db = DatabaseManager.getExisting({ name: "dbencrypt", encryptionKey: "SECURE", create: false });
         expect(db).not.toBeNull("DB dont exists");
-        db.destroy();
+         db.destroy();
         done();
     });
     it("should crud document", (done) => {
@@ -120,7 +136,7 @@ describe('test a TransactionService', () => {
         expect(fetched.name).toBe("user1");
         done();
     });
-    it("should create conflicts", (done) => {
+    /*it("should create conflicts", (done) => {
         let user = new User;
         user.name = "user1";
         user.group.name = "group1";
@@ -141,7 +157,7 @@ describe('test a TransactionService', () => {
         conflict = dbTest.getConflicts("ID");
         expect(conflict.length).toBe(1, "should have 2 revision conflicting");
         done();
-    });
+    });*/
 
     it("should create attachment with document", (done) => {
         let user = new User;
@@ -169,7 +185,6 @@ describe('test a TransactionService', () => {
         expect(attachments.length).toBe(0, "Should not have attachment");
         done();
     });
-    //TODO grouplevel + use push to create conflict => create doc push one shot then destroy then pull
     it("should create simple view", (done) => {
         dbTest.createView({
             name: "users",
@@ -190,28 +205,29 @@ describe('test a TransactionService', () => {
         }
         let org = new Orgnisation();
         dbTest.createDocument(org);
+        console.log("AFTER CREATE DOC")
         //
         let founded = dbTest.queryView("users", { mapOnly: true });
-        expect(founded.length).toBe(5, "Should find users")
-        expect(founded[0].name).toBe("user0", "Should find user");
+        expect(founded.getDocuments().length).toBe(5, "Should find users")
+        expect(founded.firstDocument()["name"]).toBe("user0", "Should find user");
         founded = dbTest.queryView("users", { mapOnly: true, startKey: "user4" });
-        expect(founded.length).toBe(1, "Should find by start key")
+        expect(founded.getDocuments().length).toBe(1, "Should find by start key")
         founded = dbTest.queryView("users", { mapOnly: true, endKey: "user0" });
-        expect(founded.length).toBe(1, "Should find by end key")
+        expect(founded.getDocuments().length).toBe(1, "Should find by end key")
         founded = dbTest.queryView("users", { mapOnly: true, startKeyDocID: "ID4" });
-        expect(founded.length).toBe(5, "Should find by start doc key")
+        expect(founded.getDocuments().length).toBe(5, "Should find by start doc key")
         founded = dbTest.queryView("users", { mapOnly: true, endKeyDocID: "ID0" });
-        expect(founded.length).toBe(5, "Should find by end doc key")
+        expect(founded.getDocuments().length).toBe(5, "Should find by end doc key")
         founded = dbTest.queryView("users", { mapOnly: true, descending: true });
-        expect(founded.length).toBe(5, "Should find users")
-        expect(founded[0].name).toBe("user4", "Should find user descending");
+        expect(founded.getDocuments().length).toBe(5, "Should find users")
+        expect(founded.firstDocument()["name"]).toBe("user4", "Should find user descending");
         founded = dbTest.queryView("users", { mapOnly: true, limit: 2 });
-        expect(founded.length).toBe(2, "Should find users limit")
+        expect(founded.getDocuments().length).toBe(2, "Should find users limit")
         founded = dbTest.queryView("users", { mapOnly: true, skip: 3 });
-        expect(founded.length).toBe(2, "Should find users limit")
-        expect(founded[0].name).toBe("user3", "Should find user skip");
+        expect(founded.getDocuments().length).toBe(2, "Should find users limit")
+        expect(founded.firstDocument()["name"]).toBe("user3", "Should find user skip");
         founded = dbTest.queryView("users", { mapOnly: true, keys: ["user1", "user2"] });
-        expect(founded.length).toBe(2, "Should find by keys")
+        expect(founded.getDocuments().length).toBe(2, "Should find by keys")
         done();
     })
 
@@ -221,7 +237,9 @@ describe('test a TransactionService', () => {
             revision: "1",
             map: (doc: User, emitter) => {
                 if (doc.docType == "USER") {
+                    console.log("BEFORE MAP.....")
                     emitter.emit([doc.getName().toLowerCase(), doc.group.name.toLowerCase(), doc.registerAt, doc.registerAtDate, doc.secure], null);
+                    console.log("AFTER MAP.....")
                 }
             }
         })
@@ -238,11 +256,11 @@ describe('test a TransactionService', () => {
         }
         //
         let founded = dbTest.queryView("users_compound", { mapOnly: true });
-        expect(founded.length).toBe(5, "Should find users");
+        expect(founded.getDocuments().length).toBe(5, "Should find users");
         founded = dbTest.queryView("users_compound", { mapOnly: true, startKey: ["user4", "group4"] });
-        expect(founded.length).toBe(1, "Should find users by startkey");
+        expect(founded.getDocuments().length).toBe(1, "Should find users by startkey");
         founded = dbTest.queryView("users_compound", { mapOnly: true, endKey: ["user1", "group1"], inclusiveEnd: true });
-        expect(founded.length).toBe(1, "Should find users by endKey");
+        expect(founded.getDocuments().length).toBe(1, "Should find users by endKey");
         //
         done();
     })
@@ -258,17 +276,22 @@ describe('test a TransactionService', () => {
             }
         });
         //CREATE
+        console.log("BEFORE CREATE.....")
         for (let i = 0; i < 5; i++) {
             let user = new User();
             user.name = "user" + i;
             user.registerAtDate = new Date();
             user.group.name = "group" + i;
+            console.log("BEFORE CREATE.....", i)
             dbTest.createDocument(user, "ID" + i);
+            console.log("BEFORE CREATED.....", i)
         }
         //
+        console.log("QUERY VIEW 1.....")
         let founded = dbTest.queryView("users_value", { mapOnly: true });
-        expect(founded.length).toBe(5, "Should find user names");
-        expect(founded[0]).toBe("user0", "Should find user");
+        console.log("QUERY VIEW 2.....")
+        expect(founded.getValues().length).toBe(5, "Should find user names");
+        expect(founded.getValues()[0]).toBe("user0", "Should find user");
         done();
     })
     it("should create view with reducer primitive", (done) => {
@@ -281,6 +304,7 @@ describe('test a TransactionService', () => {
                 }
             },
             reduce: (keys: any[], values: any[], rereduce: boolean) => {
+                console.log("KEYS", keys, keys.length)
                 return keys.length;
             }
         });
@@ -293,8 +317,8 @@ describe('test a TransactionService', () => {
             dbTest.createDocument(user, "ID" + i);
         }
         //
-        let founded: any = dbTest.queryView("users_reducer", { mapOnly: false });
-        expect(founded).toBe(5, "Should find reduce value");
+        let founded = dbTest.queryView("users_reducer", { mapOnly: false });
+        expect(founded.firstValue()).toBe(5, "Should find reduce value");
         done();
     })
     it("should create view with reducer object", (done) => {
@@ -321,8 +345,40 @@ describe('test a TransactionService', () => {
             user.group.name = "group" + i;
             dbTest.createDocument(user, "ID" + i);
         }
-        let founded: any = dbTest.queryView("users_reducer_object", { mapOnly: false });
-        expect(founded.name).toBe("user0", "Should find reduce object");
+        let founded = dbTest.queryView("users_reducer_object", { mapOnly: false });
+        expect(founded.firstValue().name).toBe("user0", "Should find reduce object");
+        done();
+    })
+    it("should create view with group level", (done) => {
+        dbTest.createView({
+            name: "users_bygroup",
+            revision: "1",
+            map: (doc: User, emitter) => {
+                if (doc.docType == "USER") {
+                    emitter.emit([doc.group.name, doc.getName().toLowerCase()], doc.name);
+                }
+            },
+            reduce: (keys: any[], values: any[], rereduce: boolean) => {
+                return values.length;
+            }
+        });
+        //CREATE
+        for (let i = 0; i < 5; i++) {
+            let user = new User();
+            user.name = "user" + i;
+            user.registerAtDate = new Date();
+            if (i < 2) {
+                user.group.name = "group0";
+            } else {
+                user.group.name = "group1";
+            }
+            dbTest.createDocument(user, "ID" + i);
+        }
+        let founded = dbTest.queryView("users_bygroup", { mapOnly: false, groupLevel: 1 });
+        //GROUP LEVEL 1 => SUB ARRAY OF SIZE 1 [group]
+        expect(founded.getValues().length).toBe(2, "Should have 2 groups");
+        expect(founded.getValues()[0]).toBe(2, "Should count 2 users");
+        expect(founded.getValues()[1]).toBe(3, "Should count 3 users");
         done();
     })
 
@@ -338,52 +394,53 @@ describe('test a TransactionService', () => {
         let org = new Orgnisation();
         dbTest.createDocument(org);
         let founded = dbTest.queryAllDocuments({ mapOnly: true });
-        expect(founded.length).toBe(6, "Should find only one doc")
+        expect(founded.getValues().length).toBe(6, "Should find only one doc")
         founded = dbTest.queryAllDocuments({ mapOnly: true, limit: 2 });
-        expect(founded.length).toBe(2, "Should find doc limit")
+        expect(founded.getValues().length).toBe(2, "Should find doc limit")
         founded = dbTest.queryAllDocuments({ mapOnly: true, keys: ["ID0", "ID1"] });
-        expect(founded.length).toBe(2, "Should find by keys")
+        expect(founded.getValues().length).toBe(2, "Should find by keys")
         done();
     })
 
     it("should live query", (done) => {
-        expect(false).toBeTruthy("DO NOT EXEC TEST");
+        expect(false).toBeTruthy("NOT WORK")
+        /*
+        console.log("BEFORE LIVE0.....")
         dbTest.createView({
             name: "users_live",
             revision: "2",
             map: (doc: Document, emitter) => {
-                console.log("EMIT.....", doc["_id"])
-                emitter.emit(doc.docId, null);
+                console.log("EMIT.....", doc["_id"]);
+                emitter.emit(doc["_id"], null);
             }
         });
         let l = {
             last: [],
             count: 0,
-            onRows(rows: any[]) {
+            onRows(rows: QueryResult) {
                 console.log("ROWS......", rows);
-                l.last = rows;
+                l.last = rows.getDocumentsId();
                 l.count++;
             }
         };
-        for (let i = -2; i < 0; i++) {
+        for (let i = 0; i < 6; i++) {
             let user = new User();
             user.name = "user" + i;
             user.registerAtDate = new Date();
             user.group.name = "group" + i;
             dbTest.createDocument(user, "ID" + i);
         }
+        //let w = new Worker("./worker");
+        //w.postMessage({});
+        console.log("BEFORE LIVE.....")
         let live = dbTest.liveQuery("users_live", { mapOnly: true }, l);
         live.start();
-        for (let i = 0; i < 2; i++) {
-            let user = new User();
-            user.name = "user" + i;
-            user.registerAtDate = new Date();
-            user.group.name = "group" + i;
-            dbTest.createDocument(user, "ID" + i);
-        }
-        live.stop();
-        done();
-    }, 10000)
+        live.waitForRows();
+        console.log("BEFORE START.....")
+        setTimeout(() => {
+            expect(l.count).toBe(1, "Should have emit......")
+        }, 3000)*/
+    })
     let url = "http://192.168.1.85:4984/test/";
     it("should push replication with filter", (done) => {
         dbTest.createFilter({
@@ -392,6 +449,7 @@ describe('test a TransactionService', () => {
                 return doc.id == "ID1";
             }
         });
+        console.log("CREATED FILTER")
         //CREATE DOCS
         for (let i = 0; i < 5; i++) {
             let user = new User();
@@ -400,6 +458,7 @@ describe('test a TransactionService', () => {
             user.group.name = "group" + i;
             dbTest.createDocument(user, "ID" + i);
         }
+        console.log("INSERTED DOC")
         //
         let push = dbTest.createPushReplication(url);
         push.setBasicAuthenticator("user", "password");
@@ -410,32 +469,33 @@ describe('test a TransactionService', () => {
                 l.count = p.changesCount;
             }
         };
+        console.log("PUSH CREATED")
         push.addChangeListener(l)
         push.start();
+        console.log("STARTED PUSH")
         setTimeout(() => {
             expect(l.count).toBe(1, "Should push 1");
-            push.stop(); 
+            push.stop();
             //PULLING
             console.log("PULLING NEW DOCS");
             let pull = dbTest.createPullReplication(url);
             pull.setBasicAuthenticator("user", "password");
-            pull.start();
             let pullCallback = {
                 countEvent: 0,
-                onChange: (p) => { 
-                    pullCallback.countEvent++;  
+                onChange: (p) => {
+                    pullCallback.countEvent++;
                 }
             }
             pull.addChangeListener(pullCallback);
+            pull.start();
             //
             setTimeout(() => {
-                expect(pullCallback.countEvent>0).toBeTruthy("Should pull");
+                expect(pullCallback.countEvent > 0).toBeTruthy("Should pull");
                 done();
-            },1000)
+            }, 1000)
         }, 1000)
-    }) 
-
-    fit("should transform to java", (done) => {
+    })
+    it("should transform to native", (done) => {
         if (isAndroid) {
             console.log("Runing android")
             let mapper = dbTest["mapper"];
@@ -495,9 +555,54 @@ describe('test a TransactionService', () => {
             expect(obj.test).toBe("OK", "Should real prop test equal")
             expect(obj.inner.test).toBe("OK", "Should real inner prop test equal")
             expect(obj.inner.bool).toBe(true, "Should real inner prop test equal")
-            //TODO date in map
             done();
         } else {
+            console.log("Runing ios")
+            let mapper = dbTest["mapper"];
+            expect(mapper.toObjcSafe(null)).toBeNull("Should be null")
+            //STRING
+            expect(mapper.toJSSAfe(mapper.toObjcSafe("test"))).toBe("test", "Should string be equals")
+            //BOOL 
+            expect(mapper.toJSSAfe(mapper.toObjcSafe(true))).toBe(true, "Should Boolean be equals")
+            //LONG
+            expect(mapper.toJSSAfe(mapper.toObjcSafe(1))).toBe(1, "Should Long be equals")
+            //FLOAT 
+            expect(mapper.toJSSAfe(mapper.toObjcSafe(1.5))).toBe(1.5, "Should Double be equals")
+            //DATE
+            let date = new Date;
+            expect(mapper.toJSSAfe(mapper.toObjcSafe(date)).getTime()).toBe(date.getTime(), "Should Date be equals")
+            //ARRAY
+            console.log("ARRAY")
+            let jArray = mapper.toObjcSafe([1, "YO", true]);
+            expect(jArray.count).toBe(3, "Should list to be of size one")
+            expect(mapper.toJSSAfe(jArray.objectAtIndex(0))).toBe(1, "Should first element to be 1")
+            expect(mapper.toJSSAfe(jArray.objectAtIndex(1))).toBe("YO", "Should second element to be YO")
+            expect(mapper.toJSSAfe(jArray.objectAtIndex(2))).toBe(true, "Should third element to be TRUE")
+            //REVERSE ARRAY
+            let jsArray = mapper.toJSSAfe(jArray);
+            console.log("REVERSE ARRAY")
+            expect(jsArray[0]).toBe(1, "Should first element to be 1")
+            expect(jsArray[1]).toBe("YO", "Should second element to be YO")
+            expect(jsArray[2]).toBe(true, "Should third element to be true")
+            //MAP
+            let m = new Map<string, number>();
+            m.set("YO", 1);
+            let jMap = mapper.toObjcSafe(m);
+            console.log("JMAP....", jMap)
+            expect(jMap.count).toBe(1, "Should map to be of size one")
+            expect(mapper.toJSSAfe(jMap.objectForKey("YO"))).toBe(1, "Should first element of map to be 1")
+            //OBJECT
+            let obj = { test: "OK", inner: { test: "OK", bool: true, year: date } };
+            let jObj = mapper.toObjcSafe(obj);
+            expect(jObj.count).toBe(2, "Should object have 2 props")
+            expect(mapper.toJSSAfe(jObj.objectForKey("test"))).toBe("OK", "Should prop test equal")
+            expect(mapper.toJSSAfe(jObj.objectForKey("inner").objectForKey("test"))).toBe("OK", "Should inner prop test equal")
+            expect(mapper.toJSSAfe(jObj.objectForKey("inner").objectForKey("bool"))).toBe(true, "Should inner prop test equal")
+            //REVERSE OBJECT
+            obj = mapper.toJSSAfe(jObj);
+            expect(obj.test).toBe("OK", "Should real prop test equal")
+            expect(obj.inner.test).toBe("OK", "Should real inner 'test' test equal")
+            expect(obj.inner.bool).toBe(true, "Should real inner bool test equal")
             done();
         }
     })

@@ -14,6 +14,7 @@ export enum Storage {
 }
 export interface DatabaseOptions {
     name: string;
+    create: boolean;
     encryptionKey?: string;
 }
 export interface DatabaseListenerParam {
@@ -28,7 +29,7 @@ export interface DatabaseListener {
     onChange(p: DatabaseListenerParam[]);
 }
 export interface QueryListener {
-    onRows(rows: any[]);
+    onRows(rows: QueryResult);
 }
 export interface DocumentOpts {
     ttl?: Date;
@@ -79,9 +80,22 @@ export enum ReplicationStatus {
 }
 export interface LiveQuery {
     waitForRows(): void;
-    updateIndex():void;
+    updateIndex(): void;
     start(): void;
     stop(): void;
+    run(): QueryResult;
+}
+export interface QueryResult {
+    getDocumentsId(): string[];
+    getDocuments(): Document[];
+    getValues(): any[];
+    firstDocument(): Document;
+    firstValue(): any;
+    firstId(): string;
+    hasDocuments(): boolean;
+    hasValues(): boolean;
+    hasIds(): boolean;
+    rerun(): void;
 }
 export interface ReplicationListenerParams {
     status: ReplicationStatus;
@@ -113,7 +127,7 @@ export interface Query {
 
 export class JSTypeChecker {
     static isUndefined(jsO: any): boolean {
-        return typeof jsO === "undefined" || (JSTypeChecker.isNumber(jsO) && isNaN(jsO));
+        return typeof jsO === "undefined" || jsO == null || (JSTypeChecker.isNumber(jsO) && isNaN(jsO));
     }
     static isDate(jsO: any): boolean {
         return jsO instanceof Date;

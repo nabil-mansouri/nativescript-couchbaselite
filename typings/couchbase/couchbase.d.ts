@@ -124,6 +124,31 @@ declare module com {
 	}
 }
 
+declare module okhttp3 {
+	export module Request {
+		export module Builder {
+
+		}
+	}
+	export module Headers {
+	}
+	export module MediaType {
+	}
+	export module RequestBody {
+	}
+	export module OkHttpClient {
+	}
+	export module Call {
+	}
+	export module CookieJar {
+	}
+	export module Cookie {
+	}
+	export module Response {
+	}
+	export module HttpUrl {
+	}
+}
 /// <reference path="./com.couchbase.lite.BlobKey.d.ts" />
 /// <reference path="./com.couchbase.lite.BlobStore.d.ts" />
 declare module com {
@@ -528,7 +553,7 @@ declare module com {
 				public revisionAdded(param0: com.couchbase.lite.DocumentChange, param1: boolean): void;
 				public loadCurrentRevisionFrom(param0: com.couchbase.lite.QueryRow): void;
 				public constructor(param0: com.couchbase.lite.Database, param1: string);
-				public putProperties(param0: java.util.Map<string,any>): com.couchbase.lite.SavedRevision;
+				public putProperties(param0: java.util.Map<string, any>): com.couchbase.lite.SavedRevision;
 				public removeChangeListener(param0: com.couchbase.lite.Document.ChangeListener): void;
 				public getLeafRevisions(param0: boolean): javautilList;
 				public getProperty(param0: string): javalangObject;
@@ -540,7 +565,7 @@ declare module com {
 				public getCurrentRevision(): com.couchbase.lite.SavedRevision;
 				public putProperties(param0: javautilMap, param1: string, param2: boolean): com.couchbase.lite.SavedRevision;
 				public getDatabase(): com.couchbase.lite.Database;
-				public getProperties(): java.util.Map<string,any>;
+				public getProperties(): java.util.Map<string, any>;
 				public purge(): void;
 				public createRevision(): com.couchbase.lite.UnsavedRevision;
 				public getRevisionHistory(): javautilList;
@@ -755,9 +780,9 @@ declare module com {
 				 * Constructs a new instance of the com.couchbase.lite.Mapper interface with the provided implementation.
 				 */
 				public constructor(implementation: {
-					map(param0: java.util.Map<string,any>, param1: com.couchbase.lite.Emitter): void;
+					map(param0: java.util.Map<string, any>, param1: com.couchbase.lite.Emitter): void;
 				});
-				public map(param0: java.util.Map<string,any>, param1: com.couchbase.lite.Emitter): void;
+				public map(param0: java.util.Map<string, any>, param1: com.couchbase.lite.Emitter): void;
 			}
 		}
 	}
@@ -1297,7 +1322,7 @@ declare module com {
 				public getSequence(): number;
 				public setUserProperties(param0: javautilMap): void;
 				public save(): com.couchbase.lite.SavedRevision;
-				public setProperties(param0: javautilMap): void;
+				public setProperties(param0: java.util.Map<any,any>): void;
 				public setAttachment(param0: string, param1: string, param2: javanetURL): void;
 				public getParentId(): string;
 				public getProperties(): javautilMap;
@@ -4358,7 +4383,7 @@ declare module com {
 					public constructor(param0: com.couchbase.lite.Database, param1: javanetURL, param2: com.couchbase.lite.replicator.Replication.Direction, param3: com.couchbase.lite.support.HttpClientFactory);
 					public networkUnreachable(): void;
 					public stop(): void;
-					public setFilterParams(param0: java.util.Map<string,any>): void;
+					public setFilterParams(param0: java.util.Map<string, any>): void;
 					public getLocalDatabase(): com.couchbase.lite.Database;
 					public addChangeListener(param0: com.couchbase.lite.replicator.Replication.ChangeListener): void;
 					public getStatus(): com.couchbase.lite.replicator.Replication.ReplicationStatus;
