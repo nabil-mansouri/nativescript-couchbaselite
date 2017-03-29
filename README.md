@@ -11,7 +11,7 @@ A nativescript plugin that brings you all couchbase features:
 
 # Author
 
-* Nabil MANSOURI <nabil.mansouri.3@gmail.com>
+* Nabil MANSOURI
 * My blog <http://nabil.e-devservice.com>
 
 # How to use it
