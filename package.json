@@ -1,7 +1,7 @@
 {
   "name": "nativescript-couchbaselite",
   "version": "1.0.0",
-  "description": "Couchbase Lite full features for nativescript (attachments, ttl, map, reduce, group, sqlcypher, conflicts, livequery....). Work on iOs and Android.",
+  "description": "A NativeScript plugin that brings you all Couchbase Mobile features (attachments, ttl, map, reduce, group, encryption, conflicts, livequery, replication....). It targets iOS and Android.",
   "main": "index",
   "typings": "index.d.ts",
   "nativescript": {
@@ -34,7 +34,7 @@
     "email": "nabil.mansouri.3@gmail.com",
     "url": "http://e-devservice.com/"
   },
-  "license": "Apache-2.0",
+  "license": "GNU General Public License 3",
   "devDependencies": {
     "tns-core-modules": "^2.5.0",
     "tns-platform-declarations": "^2.5.0"
