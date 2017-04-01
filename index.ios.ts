@@ -272,9 +272,11 @@ export class Database implements def.Database {
         let rev = doc.currentRevision;
         let names = rev.attachments;
         let array: def.Attachment[] = [];
-        for (let i = 0; i < names.count; i++) {
-            let temp = names.objectAtIndex(i);
-            array.push(new AttachmentDefault(temp));
+        if (names != null) {
+            for (let i = 0; i < names.count; i++) {
+                let temp = names.objectAtIndex(i);
+                array.push(new AttachmentDefault(temp));
+            }
         }
         return array;
     }
