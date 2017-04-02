@@ -167,8 +167,8 @@ export class Database implements def.Database {
             if (opts) {
                 opts.ttl && (document.expirationDate = opts.ttl);
             }
-            let rev = document.putPropertiesError(this.mapper.jsonToMap(data));
             data.docId = document.documentID;
+            let rev = document.putPropertiesError(this.mapper.jsonToMap(data));
             data.docRev = rev.revisionID;
         } catch (exception) {
             throw "Failed to createDocument:" + exception;
@@ -457,7 +457,7 @@ export class Database implements def.Database {
         }
     }
     private isDefined(variable) {
-        return (typeof variable !== 'undefined');
+        return (typeof variable !== 'undefined' && variable != null);
     }
 }
 export class QueryResult implements def.QueryResult {

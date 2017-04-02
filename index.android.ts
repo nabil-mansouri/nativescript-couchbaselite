@@ -166,8 +166,8 @@ export class Database implements def.Database {
                 opts.ttl && document.setExpirationDate(this.mapper.toJavaDate(opts.ttl));
             }
             //
-            let rev = document.putProperties(this.mapper.jsonToMap(data));
             data.docId = document.getId();
+            let rev = document.putProperties(this.mapper.jsonToMap(data));
             data.docRev = rev.getId();
         } catch (exception) {
             throw "Failed to createDocument:" + exception;

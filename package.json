@@ -1,6 +1,6 @@
 {
   "name": "nativescript-couchbaselite",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A NativeScript plugin that brings you all Couchbase Mobile features (attachments, ttl, map, reduce, group, encryption, conflicts, livequery, replication....). It targets iOS and Android.",
   "main": "index",
   "typings": "index.d.ts",
