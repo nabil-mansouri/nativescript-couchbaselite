@@ -156,6 +156,13 @@ export class Database implements def.Database {
     setMapping(m: Map<string, ClassType<any>>) {
         this.mapper.setMapping(m);
     }
+
+    purge(id: string) {
+        let document =  this.db.documentWithID(id);
+        if (document != null) {
+            document.purgeDocument();
+        }
+    }
     createDocument(data: def.Document, id?: string, opts?: def.DocumentOpts): void {
         try {
             let document: CBLDocument = null;

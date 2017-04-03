@@ -17,6 +17,7 @@ export class AttachmentFactory {
 export class Database {
     setMapping(m: Map<string, ClassType<any>>);
     createDocument(data: Document, id?: string, opts?: DocumentOpts): void;
+    purge(id:string);
     getDocument(id: string): Document;
     updateDocument(id: string, data: Document, opts?: DocumentOpts): void;
     deleteDocument(id: string): boolean;

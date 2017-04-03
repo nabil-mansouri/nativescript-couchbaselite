@@ -154,6 +154,12 @@ export class Database implements def.Database {
     setMapping(m: Map<string, ClassType<any>>) {
         this.mapper.setMapping(m);
     }
+    purge(id: string) {
+        let document = this.db.getExistingDocument(id);
+        if (document != null) {
+            document.purge();
+        }
+    }
     createDocument(data: def.Document, id?: string, opts?: def.DocumentOpts): void {
         try {
             let document: com.couchbase.lite.Document = null;
