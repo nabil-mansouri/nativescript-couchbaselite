@@ -64,6 +64,11 @@ class Mapper {
     mapping = new Map<string, ClassType<any>>();
     constructor() {
     }
+    copy() {
+        let m = new Mapper;
+        m.mapping = this.mapping;
+        return m;
+    }
     setMapping(m: Map<string, ClassType<any>>) {
         this.mapping = m;
     }
@@ -152,13 +157,14 @@ class Mapper {
 }
 export class Database implements def.Database {
     mapper = new Mapper();
-    constructor(private db: CBLDatabase) { }
+    constructor(private db: CBLDatabase) {
+    }
     setMapping(m: Map<string, ClassType<any>>) {
         this.mapper.setMapping(m);
     }
 
     purge(id: string) {
-        let document =  this.db.documentWithID(id);
+        let document = this.db.documentWithID(id);
         if (document != null) {
             document.purgeDocument();
         }
@@ -305,7 +311,7 @@ export class Database implements def.Database {
         let mapper = (document: NSDictionary<string, any>, emit: (p1, p2) => void) => {
             try {
                 let value = self.mapper.mapToJson(document);
-                opts.map(value, new Emitter(emit));
+                opts.map(value, new Emitter(emit,this.mapper.copy()));
             } finally {
             }
         };
@@ -353,13 +359,13 @@ export class Database implements def.Database {
         let queryM = this.db.viewNamed(name).createQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return new QueryResult(queryM, resEnum);
+        return new QueryResult(queryM, resEnum,this.mapper.copy());
     }
     queryAllDocuments(query: def.Query): def.QueryResult {
         let queryM = this.db.createAllDocumentsQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return new QueryResult(queryM, resEnum);
+        return new QueryResult(queryM, resEnum,this.mapper.copy());
     }
     liveQuery(name: string, query: def.Query, listener: def.QueryListener): def.LiveQuery {
         let view = this.db.viewNamed(name);
@@ -370,7 +376,7 @@ export class Database implements def.Database {
         class ObserverLive extends NSObject {
             observeValueForKeyPath(keyPath: NSString, ofObject: NSObject, change: NSDictionary<string, any>, context): void {
                 if (ofObject == live) {
-                    let rows = new QueryResult(live, live.rows);
+                    let rows = new QueryResult(live, live.rows,self.mapper.copy());
                     listener.onRows(rows);
                 }
             }
@@ -396,7 +402,7 @@ export class Database implements def.Database {
             },
             run: () => {
                 let res = live.run();
-                return new QueryResult(live, live.rows);
+                return new QueryResult(live, live.rows,this.mapper.copy());
             }
         }
     }
@@ -428,7 +434,7 @@ export class Database implements def.Database {
     createPullReplication(url: string): def.ReplicationPull {
         try {
             let pull = this.db.createPullReplication(NSURL.URLWithString(url));
-            return new ReplicationPull(pull, this.db);
+            return new ReplicationPull(pull, this.db,this.mapper.copy());
         } catch (exception) {
             throw "Failed to create pull replication..." + exception;
         }
@@ -436,7 +442,7 @@ export class Database implements def.Database {
     createPushReplication(url: string): def.ReplicationPush {
         try {
             let pull = this.db.createPushReplication(NSURL.URLWithString(url));
-            return new ReplicationPush(pull, this.db);
+            return new ReplicationPush(pull, this.db,this.mapper.copy());
         } catch (exception) {
             throw "Failed to create push replication..." + exception;
         }
@@ -471,9 +477,7 @@ export class QueryResult implements def.QueryResult {
     ids: string[] = null;
     documents: def.Document[] = null;
     values: any[] = null;
-    mapper = new Mapper();
-    constructor(private query: CBLQuery, private resEnum: CBLQueryEnumerator) {
-
+    constructor(private query: CBLQuery, private resEnum: CBLQueryEnumerator, protected mapper: Mapper) {
         var result: any[] = [];
         for (let i = 0; i < resEnum.count; i++) {
             var row = resEnum.rowAtIndex(i);
@@ -593,8 +597,9 @@ abstract class Replication {
     abstract observed();
 }
 export class ReplicationPull extends Replication implements def.ReplicationPull {
-    mapper = new Mapper();
-    constructor(private innerPull: CBLReplication, private db: CBLDatabase) { super() }
+    constructor(private innerPull: CBLReplication, private db: CBLDatabase, protected mapper: Mapper) {
+        super()
+    }
     observed() { return this.innerPull; }
     setContinuous(cont: boolean) {
         this.innerPull.continuous = true;
@@ -620,8 +625,9 @@ export class ReplicationPull extends Replication implements def.ReplicationPull 
 }
 
 export class ReplicationPush extends Replication implements def.ReplicationPush {
-    mapper = new Mapper();
-    constructor(private innerPush: CBLReplication, private db: CBLDatabase) { super(); }
+    constructor(private innerPush: CBLReplication, private db: CBLDatabase, protected mapper: Mapper) {
+        super()
+    }
     observed() { return this.innerPush; }
     setContinuous(cont: boolean) {
         this.innerPush.continuous = true;
@@ -646,11 +652,9 @@ export class ReplicationPush extends Replication implements def.ReplicationPush 
     }
 }
 export class Emitter implements def.Emitter {
-    mapper = new Mapper();
-    constructor(private innerEmitter: (p1, p2) => void) {
+    constructor(private innerEmitter: (p1, p2) => void, protected mapper: Mapper) {
         this.mapper.jsDateToTime = true;
     }
-
     emit(key: any | Array<any>, value: any) {
         this.innerEmitter(this.mapper.toObjcSafe(key), this.mapper.toObjcSafe(value));
     }

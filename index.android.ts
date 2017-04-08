@@ -66,6 +66,11 @@ class Mapper {
         let clazz = new java.util.HashMap<any, any>().getClass();
         this.typeMap = com.google.gson.reflect.TypeToken.get(clazz).getType();
     }
+    copy() {
+        let m = new Mapper;
+        m.mapping = this.mapping;
+        return m;
+    }
     setMapping(m: Map<string, ClassType<any>>) {
         this.mapping = m;
     }
@@ -305,7 +310,7 @@ export class Database implements def.Database {
                 try {
                     //java.lang.Thread.currentThread().setContextClassLoader(newLoader);
                     let value = self.mapper.mapToJson(document);
-                    opts.map(value, new Emitter(emitter));
+                    opts.map(value, new Emitter(emitter, self.mapper.copy()));
                 } finally {
                     //java.lang.Thread.currentThread().setContextClassLoader(oldLoader);
                 }
@@ -346,13 +351,13 @@ export class Database implements def.Database {
         let queryM = this.db.getView(name).createQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return new QueryResult(queryM, resEnum);
+        return new QueryResult(queryM, resEnum, this.mapper.copy());
     }
     queryAllDocuments(query: def.Query): def.QueryResult {
         let queryM = this.db.createAllDocumentsQuery();
         this.prepareQuery(query, queryM);
         var resEnum = queryM.run();
-        return new QueryResult(queryM, resEnum);
+        return new QueryResult(queryM, resEnum, this.mapper.copy());
     }
     liveQuery(name: string, query: def.Query, listener: def.QueryListener): def.LiveQuery {
         let view = this.db.getView(name);
@@ -364,7 +369,7 @@ export class Database implements def.Database {
             changed(event: com.couchbase.lite.LiveQuery.ChangeEvent) {
                 let obj = <any>event.getSource();
                 if (obj.equals(live)) {
-                    let res = new QueryResult(live, live.getRows());
+                    let res = new QueryResult(live, live.getRows(), self.mapper.copy());
                     listener.onRows(res);
                 }
             }
@@ -384,7 +389,7 @@ export class Database implements def.Database {
             },
             run: () => {
                 let resEnum = live.run();
-                return new QueryResult(live, resEnum);
+                return new QueryResult(live, resEnum, this.mapper.copy());
             }
         }
     }
@@ -415,7 +420,7 @@ export class Database implements def.Database {
     createPullReplication(url: string): def.ReplicationPull {
         try {
             let pull = this.db.createPullReplication(new java.net.URL(url));
-            return new ReplicationPull(pull);
+            return new ReplicationPull(pull, this.mapper.copy());
         } catch (exception) {
             throw "Failed to create pull replication..." + exception;
         }
@@ -423,7 +428,7 @@ export class Database implements def.Database {
     createPushReplication(url: string): def.ReplicationPush {
         try {
             let pull = this.db.createPushReplication(new java.net.URL(url));
-            return new ReplicationPush(pull);
+            return new ReplicationPush(pull, this.mapper.copy());
         } catch (exception) {
             throw "Failed to create push replication..." + exception;
         }
@@ -460,8 +465,8 @@ export class QueryResult implements def.QueryResult {
     ids: string[] = null;
     documents: def.Document[] = null;
     values: any[] = null;
-    mapper = new Mapper();
-    constructor(private query: com.couchbase.lite.Query, private resEnum: com.couchbase.lite.QueryEnumerator) { }
+
+    constructor(private query: com.couchbase.lite.Query, private resEnum: com.couchbase.lite.QueryEnumerator, protected mapper: Mapper) { }
     getDocuments(): def.Document[] {
         this.resEnum.reset();
         if (this.documents == null) {
@@ -551,8 +556,8 @@ abstract class Replication {
     abstract observer(): com.couchbase.lite.replicator.Replication;
 }
 export class ReplicationPull extends Replication implements def.ReplicationPull {
-    mapper = new Mapper();
-    constructor(private innerPull: com.couchbase.lite.replicator.Replication) { super() }
+
+    constructor(private innerPull: com.couchbase.lite.replicator.Replication, protected mapper: Mapper) { super() }
 
     observer(): com.couchbase.lite.replicator.Replication {
         return this.innerPull;
@@ -582,8 +587,8 @@ export class ReplicationPull extends Replication implements def.ReplicationPull 
 }
 
 export class ReplicationPush extends Replication implements def.ReplicationPush {
-    mapper = new Mapper();
-    constructor(private innerPush: com.couchbase.lite.replicator.Replication) { super() }
+
+    constructor(private innerPush: com.couchbase.lite.replicator.Replication, protected mapper: Mapper) { super() }
     setContinuous(cont: boolean) {
         this.innerPush.setContinuous(true);
     }
@@ -611,8 +616,8 @@ export class ReplicationPush extends Replication implements def.ReplicationPush 
     }
 }
 export class Emitter implements def.Emitter {
-    mapper = new Mapper();
-    constructor(private innerEmitter: com.couchbase.lite.Emitter) { }
+
+    constructor(private innerEmitter: com.couchbase.lite.Emitter, protected mapper: Mapper) { }
 
     emit(key: any | Array<any>, value: any) {
         this.innerEmitter.emit(this.mapper.toJavaSafe(key), this.mapper.toJavaSafe(value));
