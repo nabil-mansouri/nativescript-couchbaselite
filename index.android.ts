@@ -340,7 +340,7 @@ export class Database implements def.Database {
         }
         return null;
     }
-    
+
     private prepareQuery(query: def.Query, queryM: com.couchbase.lite.Query) {
         this.isDefined(query.onlyConflict) && queryM.setAllDocsMode(com.couchbase.lite.Query.AllDocsMode.ONLY_CONFLICTS);
         this.isDefined(query.inclusiveStart) && queryM.setInclusiveStart(query.inclusiveStart);
@@ -470,7 +470,7 @@ export class Database implements def.Database {
         }
     }
     private isDefined(variable) {
-        return (typeof variable !== 'undefined');
+        return (typeof variable !== 'undefined' && variable!=null);
     }
 }
 export class QueryResult implements def.QueryResult {
