@@ -329,6 +329,18 @@ export class Database implements def.Database {
             view.setMap(mapper, opts.revision);
         }
     }
+    private convertIndexMode(indexMode: def.IndexUpdateMode): com.couchbase.lite.Query.IndexUpdateMode {
+        switch (indexMode) {
+            case def.IndexUpdateMode.BEFORE:
+                return com.couchbase.lite.Query.IndexUpdateMode.BEFORE; 
+            case def.IndexUpdateMode.AFTER:
+                return com.couchbase.lite.Query.IndexUpdateMode.AFTER; 
+            case def.IndexUpdateMode.NEVER:
+                return com.couchbase.lite.Query.IndexUpdateMode.NEVER; 
+        }
+        return null;
+    }
+    
     private prepareQuery(query: def.Query, queryM: com.couchbase.lite.Query) {
         this.isDefined(query.onlyConflict) && queryM.setAllDocsMode(com.couchbase.lite.Query.AllDocsMode.ONLY_CONFLICTS);
         this.isDefined(query.inclusiveStart) && queryM.setInclusiveStart(query.inclusiveStart);
@@ -337,7 +349,7 @@ export class Database implements def.Database {
         this.isDefined(query.endKey) && queryM.setEndKey(this.mapper.toJavaSafe(query.endKey));
         this.isDefined(query.endKeyDocID) && queryM.setEndKeyDocId(query.endKeyDocID);
         this.isDefined(query.groupLevel) && queryM.setGroupLevel(query.groupLevel);
-        this.isDefined(query.indexUpdateMode) && queryM.setIndexUpdateMode(query.indexUpdateMode);
+        this.isDefined(query.indexUpdateMode) && queryM.setIndexUpdateMode(this.convertIndexMode(query.indexUpdateMode));
         this.isDefined(query.keys) && queryM.setKeys(this.mapper.toJavaSafe(query.keys));
         this.isDefined(query.limit) && queryM.setLimit(query.limit);
         this.isDefined(query.mapOnly) && queryM.setMapOnly(query.mapOnly);
