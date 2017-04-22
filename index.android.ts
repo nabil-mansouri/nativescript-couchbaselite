@@ -488,6 +488,7 @@ export class QueryResult implements def.QueryResult {
                 if (row.getDocument() != null) {
                     let prop = row.getDocument().getProperties();
                     let doc = this.mapper.mapToJson(prop);
+                    doc.docId = row.getDocument().getId();
                     this.documents.push(doc);
                 }
             }
