@@ -110,7 +110,9 @@ dbTest.createView({
 ```
 
 ### Query View
-
+Querying a View returns a QueryResult object which has "documents" property that contains all the documents
+that matched our query. This document property will be null unless you call the getDocuments() method of the 
+QueryResult. getDocuments() will return all the documents and will also fill up the QueryResult's "documents" property;
 ```typescript
 let founded = dbTest.queryView("users", { mapOnly: true });
 founded = dbTest.queryView("users", { mapOnly: true, startKey: "user4" });
@@ -121,6 +123,7 @@ founded = dbTest.queryView("users", { mapOnly: true, descending: true });
 founded = dbTest.queryView("users", { mapOnly: true, limit: 2 });
 founded = dbTest.queryView("users", { mapOnly: true, skip: 3 });
 founded = dbTest.queryView("users", { mapOnly: true, keys: ["user1", "user2"] });
+let docs = founded.getDocuments();
 ```
 
 ### Use compound keys
