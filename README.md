@@ -12,7 +12,7 @@ A nativescript plugin that brings you all couchbase features:
 # Author
 
 * Nabil MANSOURI
-* My blog <http://e-devservice.com>
+[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=MDVEPT8NJVVPY&lc=US&no_note=0&cn=Ajouter%20des%20instructions%20particuli%c3%a8res%20pour%20le%20vendeur%20%3a&no_shipping=2&currency_code=EUR&bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted)
 
 # How to use it
 
