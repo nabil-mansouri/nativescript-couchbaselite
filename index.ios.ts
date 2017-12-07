@@ -500,7 +500,7 @@ export class QueryResult implements def.QueryResult {
                 if (row.document != null) {
                     let prop = row.document.properties;
                     let doc = this.mapper.mapToJson(prop);
-                    doc = row.document.documentID;
+                    doc.docId = row.document.documentID;
                     this.documents.push(doc);
                 }
             }
